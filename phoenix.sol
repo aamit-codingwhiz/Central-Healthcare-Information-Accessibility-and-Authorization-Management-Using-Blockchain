@@ -24,6 +24,7 @@ contract PatientHistory {
         require(isPatientRegistered(_patientId), "Patient ID does not exist.");
         uint256 patientIndex = getPatientIdIndex(_patientId);
         delete patients[patientIndex];
+        countPatient--;
     }
 
     function isPatientRegistered(string memory _id) public view returns (bool) {
@@ -82,28 +83,53 @@ contract PatientHistory {
         testReports = patient.testReports;
     }
 
+    function stringsEquals(string memory s1, string memory s2) private pure returns (bool) {
+        bytes memory b1 = bytes(s1);
+        bytes memory b2 = bytes(s2);
+        uint256 l1 = b1.length;
+        if (l1 != b2.length) return false;
+        for (uint256 i=0; i<l1; i++) {
+            if (b1[i] != b2[i]) return false;
+        }
+        return true;
+    }
+ 
     function updateTestReport(
         string memory _patientId,
+        string memory _oldReport,
         string memory _newReport
     ) public {
         require(isPatientRegistered(_patientId), "Patient ID does not exist.");
         // require(isCenterAuthorized(_centerId), "Center is not authorized.");
         uint256 patientIndex = getPatientIdIndex(_patientId);
-
+ 
         Patient storage patient = patients[patientIndex];
         // require(patient.centerIds[_index] == _centerId, "Center does not have permission to update this report.");
-        patient.testReports[0] = _newReport;
+        uint256 report_index;
+        for (uint256 i = 0; i < patient.testReports.length ; i++) {
+            if (stringsEquals(patient.testReports[i],_oldReport)) {
+                report_index=i;
+            }
+        }
+        patient.testReports[report_index] = _newReport;
     }
-
-    function removeTestReport(string memory _patientId) public {
+ 
+    function removeTestReport(string memory _patientId, string memory _reportName) public {
         require(isPatientRegistered(_patientId), "Patient ID does not exist.");
         // require(isCenterAuthorized(_centerId), "Center is not authorized.");
         uint256 patientIndex = getPatientIdIndex(_patientId);
-
+ 
         Patient storage patient = patients[patientIndex];
         // require(patient.centerIds[_index] == _centerId, "Center does not have permission to delete this report.");
         // delete patient.centerIds[_index];
-        delete patient.testReports[0];
+         uint256 report_index;
+        for (uint256 i = 0; i < patient.testReports.length ; i++) {
+            if (stringsEquals(patient.testReports[i],_reportName)) {
+                report_index=i;
+            }
+        }
+        delete patient.testReports[report_index];
+        delete patient.centerIds[report_index];
     }
 
     function getRecentPatientReports(string memory _patientId, uint256 _count)
